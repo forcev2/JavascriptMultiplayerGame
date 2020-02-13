@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+	<head>
+		   <script src="SERVCONNECT.js" type="text/javascript"></script>
+		   <link rel="stylesheet" type="text/css" href="style.css">
+		   <link href="https://fonts.googleapis.com/css?family=VT323&display=swap" rel="stylesheet">	
+		   <script
+  				src="https://code.jquery.com/jquery-3.4.1.min.js"
+  				integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+  				crossorigin="anonymous"></script>
+	</head>
+    <body>
+	  <div class="center">
+		<div class="slidecontainer1">
+			<input type="range" min="0" max="255" value="50" class="slider" id="red">
+		</div>
+		<div class="slidecontainer2">
+			<input type="range" min="0" max="255" value="50" class="slider" id="green">
+		</div>
+		<div class="slidecontainer3">
+			<input type="range" min="0" max="255" value="50" class="slider" id="blue">
+		</div>
+      <canvas width = "1000" height = "500" id = "canvas" class="myClickDisabledElm"></canvas>
+	  <p id ="instruction">
+		W,A,S,D - move,  left mouse button - shoot
+	  </p>
+	</div>
+	  <br>
+	  <script src="controller.js" type="text/javascript"></script>
+	  <script src="bullets.js" type="text/javascript"></script>
+	  <script src="menu.js" type="text/javascript"></script>
+	  
+	  
+      <script>		
+		var player = {
+			"x": 30,
+			"y": 250, 
+			"color": "42d9f4",
+			"name": "IMIE",
+			"hp": 100,
+			"number": "0",
+			"width":50,
+			"height":50
+		};
+		var objects = [];
+		var mapObjects = [];
+		var bullets = [];
+	    var canvas = document.getElementById('canvas');
+		var ctx = canvas.getContext('2d');
+		
+		
+		function init(){
+			//init map
+			//makeCorsRequest('/INIT=' + player.name +'&'+ player.color+"/n");
+			mapObjects.push({
+				"x": 0,
+				"y" : 400,
+				"width" : 500,
+				"height" : 200,
+			});
+
+
+			mapObjects.push({
+				"x": 980,
+				"y" : 0,
+				"width" : 60,
+				"height" : 1000,
+			});
+			
+			mapObjects.push({
+				"x": 500,
+				"y" : 280,
+				"width" : 500,
+				"height" : 300,
+			});
+
+			mapObjects.push({
+				"x": 0,
+				"y" : 0,
+				"width" : 30,
+				"height" : 500,
+			});
+			
+			mapObjects.push({
+				"x": 250,
+				"y" : 340,
+				"width" : 500,
+				"height" : 100,
+			});
+			
+			//request('NEW_PLAYER=' + player.name +'&'+ player.color+"/n");
+			var x;
+				x = makeCorsRequest('NEW_PLAYER=' + player.name +'&'+ player.color +"/n");		
+			//alert(x);
+			var dods = x.toString(10);
+			player.number = dods.substring(dods.indexOf("=") + 1, x.length);
+			//console.log(mapObjects);
+			gameLoop();
+		}
+		
+		function updatePlayers(beforeParse){
+			//console.log(beforeParse);
+				//console.log(beforeParse);
+			if(beforeParse != "/non"){
+				var obj = beforeParse.split('&');
+				for(i = 0; i < objects.length; i++){
+					var afterParse = JSON.parse(obj[i]);
+					//console.log(afterParse);
+						objects[i].name = afterParse.name;
+						objects[i].x = afterParse.x;
+						objects[i].y = afterParse.y;
+						objects[i].hp = afterParse.hp;	
+						objects[i].color = afterParse.color;	
+						objects[i].number = afterParse.number;
+				}
+				if(obj.length > objects.length){
+					var afterParse = obj[obj.length - 1];
+					objects.push({
+						"name" : afterParse.name,
+						"x" : afterParse.x,
+						"y" : afterParse.y,
+						"hp" : afterParse.hp,
+						"color" : afterParse.color,
+						"number": afterParse.number
+					});
+				}
+			}			
+		}
+		
+		function gameLoop(){
+			var beforeParse;
+			setInterval(function(){
+				var request_p = "PLAYER=" + player.number +"&"+player.x+"&"+player.y+"&"+player.hp;
+				beforeParse = makeCorsRequest(request_p);
+				console.log(beforeParse);
+				playerMove();
+				var indexB = beforeParse.indexOf("|bullet");
+				if(indexB != -1){
+					var playerInfo = beforeParse.substring(0,indexB);
+					updatePlayers(playerInfo);
+					var bulletInfo = beforeParse.substring(indexB);
+					spawnBullet(bulletInfo);
+					bulletUpdate();
+				}
+				if(beforeParse.startsWith("number=")){
+					player.number = beforeParse.substring(beforeParse.indexOf('=') + 1);
+					//alert(player.number);
+				}
+				
+				draw();
+			},10);
+		}
+		
+		function draw() {
+			
+			ctx.fillStyle = 'grey';
+			ctx.fillRect(0,0,canvas.width,canvas.height);
+			
+			for(i = 0; i < mapObjects.length; i++)
+			{
+				ctx.fillStyle = 'black';
+				ctx.fillRect(mapObjects[i].x,mapObjects[i].y,mapObjects[i].width,mapObjects[i].height);
+			}
+
+			for(i = 0; i < objects.length; i++)
+			{
+				//console.log("in DRAW : " + objects[i].x + " #"+ objects[i].color);
+				var col = "#" + objects[i].color;
+				//console.log(col);
+				ctx.fillStyle = col;
+				ctx.fillRect(objects[i].x, objects[i].y, 50, 50);
+			}
+			
+			for(i = 0; i < bullets.length; i++){
+				var col = 'yellow';
+			
+				ctx.fillStyle = col;
+				ctx.fillRect(bullets[i].x - (bulletSize/2), bullets[i].y - (bulletSize/2), bulletSize, bulletSize);
+			}
+  		  
+		}
+
+		menu();
+		//init();
+		jQuery('.myClickDisabledElm').bind('dblclick',function(e){
+			e.preventDefault();
+		})
+      </script>
+   </body>
+</html>
