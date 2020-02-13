@@ -1,3 +1,3 @@
-#Javascript Multiplayer Game
+#JavascriptMultiplayerGame
 
 Prototype of multiplayer game made in javascript.
